@@ -1,12 +1,17 @@
+import LinearAlgebra: diag, inv, logdet
+import PDMats: dim, quad, quad!, invquad!, invquad, pdadd, pdadd!,
+    X_A_Xt, Xt_A_X, X_invA_Xt, Xt_invA_X,
+    whiten!, unwhiten!
+
 struct PDCorMat{T<:Real, S<:AbstractMatrix} <: AbstractPDMat{T}
     dim::Int
     mat::S
     chol::Cholesky{T,S}
-    cortype::Type{<:Correlation}
+    cortype::Type{<:AbstractCorrelation}
 
-    PDCorMat{T,S}(d::Int, m::AbstractMatrix{T}, c::Cholesky{T,S}, t::Type{<:Correlation}) where {T,S} = new{T,S}(d,m,c,t)
+    PDCorMat{T,S}(d::Int, m::AbstractMatrix{T}, c::Cholesky{T,S}, t::Type{<:AbstractCorrelation}) where {T,S} = new{T,S}(d,m,c,t)
 end
-function PDCorMat(mat::AbstractMatrix, cortype::Type{<:Correlation})
+function PDCorMat(mat::AbstractMatrix, cortype::Type{<:AbstractCorrelation})
     d = size(mat, 1)
 
     if !iscorrelation(mat)

@@ -1,57 +1,41 @@
 module Bigsimr
 
+
 using Base.Threads: @threads
 using Distributions
+using Distributions: UnivariateDistribution, ContinuousUnivariateDistribution,
+    DiscreteUnivariateDistribution
 using FastGaussQuadrature: gausshermite
 using HypergeometricFunctions: _₂F₁
 using IntervalArithmetic: interval, mid
 using IntervalRootFinding: roots, Krawczyk
 using IterTools: subsets
-using LinearAlgebra
+using LinearAlgebra: Cholesky, Diagonal, Symmetric
+using LinearAlgebra: cholesky, diag, diagind, diagm, eigen, isposdef, issymmetric, norm
 using LsqFit: curve_fit, coef
 using PDMats
 using Polynomials: Polynomial, derivative
 using QuadGK: quadgk
 using SharedArrays
 using SpecialFunctions: erfc, erfcinv
+using Statistics: clampcor
 using StatsBase: corspearman, corkendall
 
-import Distributions: mean, std, quantile, cdf, pdf, var, params
-import LinearAlgebra: diag, inv, logdet
-import PDMats: dim, quad, quad!, invquad!, invquad, pdadd, pdadd!,
-    X_A_Xt, Xt_A_X, X_invA_Xt, Xt_invA_X,
-    whiten!, unwhiten!
-import Statistics: cor, clampcor
+
+import Statistics: cor
 
 
 struct ValidCorrelationError <: Exception end
 
-
-abstract type Correlation end
-"""
-    Pearson <: Correlation
-
-Pearson's ``r`` product-moment correlation
-"""
-struct Pearson <: Correlation end
-"""
-    Spearman <: Correlation
-
-Spearman's ``ρ`` rank correlation
-"""
-struct Spearman <: Correlation end
-"""
-    Kendall <: Correlation
-
-Kendall's ``τ`` rank correlation
-"""
-struct Kendall <: Correlation end
+abstract type AbstractCorrelation end
+struct Pearson  <: AbstractCorrelation end
+struct Spearman <: AbstractCorrelation end
+struct Kendall  <: AbstractCorrelation end
 
 
 export rvec, rmvn
 export pearson_match, pearson_bounds
-export Correlation, Pearson, Spearman, Kendall
-export PDCorMat
+export AbstractCorrelation, Pearson, Spearman, Kendall
 export cor, cor_fast
 export cor_nearPD, cor_fastPD, cor_fastPD!
 export cor_randPD, cor_randPSD
@@ -71,8 +55,6 @@ const invsqrt2π = inv(sqrt(2π))
 
 
 include("utils.jl")
-
-include("PDCorMat.jl")
 
 include("RandomVector/rvec.jl")
 include("RandomVector/rmvn.jl")

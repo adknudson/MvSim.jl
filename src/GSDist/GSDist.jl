@@ -40,7 +40,7 @@ function GSDist(dist::UnivariateDistribution, F₀::Real=0.5;
     fX = typeof(dist) <: DiscreteUnivariateDistribution ? dF.(X) : pdf.(dist, X)
 
     f = (t, p) -> p[1] * t.^p[2] .* (1.0 .- t.^p[3]).^p[4]
-    
+
     p0 = [1, 0.5, 1, 0.5]
     fit = curve_fit(f, FX, fX, p0)
     p = coef(fit)
@@ -57,9 +57,9 @@ function Base.show(io::IO, ::MIME"text/plain", G::GSDist)
     print(io, " γ: $γ")
 end
 
-params(G::GSDist) = (G.α, G.g, G.k, G.γ)
+Distributions.params(G::GSDist) = (G.α, G.g, G.k, G.γ)
 
-function quantile(D::GSDist, p::Real)
+function Distributions.quantile(D::GSDist, p::Real)
     q = _gsd_quantile(p, D.F₀, D.x₀, D.α, D.g, D.k, D.γ)
     if isnan(q)
         @debug "Unable to calculate the quantile of the GSDist. Falling back to the quantile of the underlying distribution."
@@ -69,7 +69,7 @@ function quantile(D::GSDist, p::Real)
     end
 end
 
-function mean(G::GSDist)
+function Distributions.mean(G::GSDist)
     m = _gsd_mean(G.F₀, G.x₀, G.α, G.g, G.k, G.γ)
     if isnan(m)
         @debug "Unable to calculate the mean of the GSDist. Falling back to the mean of the underlying distribution."
@@ -79,7 +79,7 @@ function mean(G::GSDist)
     end
 end
 
-function var(G::GSDist)
+function Distributions.var(G::GSDist)
     m1 = mean(G)
     m2 = try
         _gsd_moment(G.F₀, G.x₀, G.α, G.g, G.k, G.γ, moment=2)
@@ -92,4 +92,4 @@ function var(G::GSDist)
     m2 - m1^2
 end
 
-std(G::GSDist) = sqrt(var(G))
+Distributions.std(G::GSDist) = sqrt(var(G))

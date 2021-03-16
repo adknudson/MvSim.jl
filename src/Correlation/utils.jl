@@ -1,7 +1,7 @@
 """
-    cor(x[, y], ::Type{<:Correlation})
+    cor(x[, y], ::Type{<:AbstractCorrelation})
 
-Compute the correlation matrix of a given type. 
+Compute the correlation matrix of a given type.
 
 The possible correlation types are:
   * [`Pearson`](@ref)
@@ -52,11 +52,11 @@ cor(x,    ::Type{Kendall})  = corkendall(x)
 cor(x, y, ::Type{Kendall})  = corkendall(x, y)
 
 """
-    cor_fast(M::Matrix{S}, T::Type{<:Correlation}=Pearson) where {S<:Real}
+    cor_fast(M::Matrix{S}, T::Type{<:AbstractCorrelation}=Pearson) where {S<:Real}
 
 Calculate the correlation matrix in parallel.
 """
-function cor_fast(M::Matrix{S}, T::Type{<:Correlation}=Pearson) where {S<:Real}
+function cor_fast(M::Matrix{S}, T::Type{<:AbstractCorrelation}=Pearson) where {S<:Real}
     n, d = size(M)
     C = SharedMatrix{S}(d, d)
     @threads for i in collect(subsets(1:d, Val{2}()))
@@ -69,14 +69,14 @@ end
 
 
 """
-    cor_convert(X::Matrix{<:Real}, from::Type{<:Correlation}, to::Type{<:Correlation})
+    cor_convert(X::Matrix{<:Real}, from::Type{<:AbstractCorrelation}, to::Type{<:AbstractCorrelation})
 
 Convert from one type of correlation matrix to another.
 
-The role of conversion in this package is typically used from either Spearman or 
+The role of conversion in this package is typically used from either Spearman or
 Kendall to Pearson where the Pearson correlation is used in the generation of
 random multivariate normal samples. After converting, the correlation matrix
-may not be positive semidefinite, so it is recommended to check using 
+may not be positive semidefinite, so it is recommended to check using
 `LinearAlgebra.isposdef`, and subsequently calling [`cor_nearPD`](@ref).
 
 See also: [`cor_nearPD`](@ref), [`cor_fastPD`](@ref)
@@ -112,14 +112,14 @@ true
 ```
 """
 function cor_convert end
-cor_convert(x::Real, from::Type{C},        to::Type{C}) where {C<:Correlation} = x
+cor_convert(x::Real, from::Type{C},        to::Type{C}) where {C<:AbstractCorrelation} = x
 cor_convert(x::Real, from::Type{Pearson},  to::Type{Spearman}) = cor_constrain(asin(x / 2) * 6 / π)
 cor_convert(x::Real, from::Type{Pearson},  to::Type{Kendall})  = cor_constrain(asin(x) * 2 / π)
 cor_convert(x::Real, from::Type{Spearman}, to::Type{Pearson})  = cor_constrain(sin(x * π / 6) * 2)
 cor_convert(x::Real, from::Type{Spearman}, to::Type{Kendall})  = cor_constrain(asin(sin(x * π / 6) * 2) * 2 / π)
 cor_convert(x::Real, from::Type{Kendall},  to::Type{Pearson})  = cor_constrain(sin(x * π / 2))
 cor_convert(x::Real, from::Type{Kendall},  to::Type{Spearman}) = cor_constrain(asin(sin(x * π / 2) / 2) * 6 / π)
-function cor_convert(X::VecOrMat{<:Real}, from::Type{<:Correlation}, to::Type{<:Correlation})
+function cor_convert(X::VecOrMat{<:Real}, from::Type{<:AbstractCorrelation}, to::Type{<:AbstractCorrelation})
     cor_constrain(cor_convert.(copy(X), from, to))
 end
 
@@ -189,7 +189,7 @@ julia> cor_constrain(a, :L)
 function cor_constrain(C::Matrix{<:Real}, uplo=:U)
     R = copy(C)
     cor_constrain!(R, uplo)
-    R 
+    R
 end
 cor_constrain(x::Real) = clamp(x, -one(eltype(x)), one(eltype(x)))
 
