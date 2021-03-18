@@ -10,6 +10,7 @@ using HypergeometricFunctions: _₂F₁
 using IntervalArithmetic: interval, mid
 using IntervalRootFinding: roots, Krawczyk
 using IterTools: subsets
+using LinearAlgebra
 using LinearAlgebra: Cholesky, Diagonal, Symmetric
 using LinearAlgebra: cholesky, diag, diagind, diagm, eigen, isposdef, issymmetric, norm
 using LsqFit: curve_fit, coef
@@ -48,6 +49,9 @@ const UD  = UnivariateDistribution
 const CUD = ContinuousUnivariateDistribution
 const DUD = DiscreteUnivariateDistribution
 
+const CorOrNothing = Union{AbstractCorrelation, Nothing}
+const SpKe = Union{Spearman, Kendall}
+
 const sqrt2 = sqrt(2)
 const invsqrt2 = inv(sqrt(2))
 const invsqrtpi = inv(sqrt(π))
@@ -56,22 +60,20 @@ const invsqrt2π = inv(sqrt(2π))
 
 include("utils.jl")
 
-include("RandomVector/rvec.jl")
-include("RandomVector/rmvn.jl")
-include("RandomVector/utils.jl")
+include("rvec.jl")
 
-include("Correlation/cor_bounds.jl")
-include("Correlation/fast_pos_def.jl")
-include("Correlation/nearest_pos_def.jl")
-include("Correlation/random.jl")
-include("Correlation/utils.jl")
+include("cor_bounds.jl")
+include("fast_pos_def.jl")
+include("nearest_pos_def.jl")
+include("cor_random.jl")
+include("cor_utils.jl")
 
 include("PearsonMatching/pearson_match.jl")
 include("PearsonMatching/pearson_bounds.jl")
 include("PearsonMatching/utils.jl")
 
-include("GSDist/GSDist.jl")
-include("GSDist/utils.jl")
+include("GSDist.jl")
+include("MvDist.jl")
 
 include("precompile.jl")
 

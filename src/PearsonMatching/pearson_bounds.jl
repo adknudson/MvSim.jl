@@ -1,7 +1,7 @@
 """
     pearson_bounds(dA::UnivariateDistribution, dB::UnivariateDistribution; n::Int=7)
 
-Compute the theoretical lower and upper Pearson correlation values for a pair of 
+Compute the theoretical lower and upper Pearson correlation values for a pair of
 univariate distributions.
 
 See also: [`pearson_match`](@ref)
@@ -23,6 +23,7 @@ function pearson_bounds(dA::UD, dB::UD; n::Int=7)
     σB = std(dB)
     _pearson_bounds(dA, dB, μA, μB, σA, σB, n)
 end
+
 function _pearson_bounds(dA::UD, dB::UD, μA, μB, σA, σB, n)
     k = 0:1:n
     a = get_coefs(dA, n)
@@ -40,11 +41,11 @@ end
 
 
 """
-    pearson_bounds(margins::Vector{<:UnivariateDistribution})
+    pearson_bounds(margins::Vector{UnivariateDistribution})
 
-Compute the theoretical lower and upper Pearson correlation values for a set of 
+Compute the theoretical lower and upper Pearson correlation values for a set of
 univariate distributions.
-    
+
 See also: [`pearson_match`](@ref)
 
 # Examples
@@ -66,7 +67,7 @@ julia> b.upper
  0.762874  1.0
 ```
 """
-function pearson_bounds(margins::Vector{<:UD})
+function pearson_bounds(margins::Vector{UD})
     d = length(margins)
     lower, upper = zeros(Float64, d, d), zeros(Float64, d, d)
 
@@ -81,6 +82,6 @@ function pearson_bounds(margins::Vector{<:UD})
 
     upper .= Symmetric(upper)
     cor_constrain!(upper)
-    
+
     (lower = lower, upper = upper)
 end

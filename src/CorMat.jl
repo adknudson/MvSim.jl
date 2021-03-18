@@ -1,16 +1,3 @@
-using LinearAlgebra
-using Bigsimr: iscorrelation, cor_nearPD
-
-
-abstract type AbstractCorrelation end
-struct Pearson  <: AbstractCorrelation end
-struct Spearman <: AbstractCorrelation end
-struct Kendall  <: AbstractCorrelation end
-
-
-const CorOrNothing = Union{AbstractCorrelation, Nothing}
-
-
 struct CorMat{C<:CorOrNothing} <: AbstractMatrix{Float64}
     mat::AbstractMatrix{Float64}
     chol::Cholesky{Float64, <:AbstractMatrix{Float64}}
@@ -67,14 +54,6 @@ Base.getindex(m::CorMat, i::Int) = getindex(m.mat, i)
 Base.getindex(m::CorMat, I::Vararg{Int, N}) where {N} = getindex(m.mat, I...)
 Base.setindex!(m::CorMat, v, i::Int) = setindex!(m.mat, v, i)
 Base.setindex!(m::CorMat, v, I::Vararg{Int, N}) where {N} = setindex!(m.mat, v, I...)
-
-# from -> to
-_pe_sp(x) = asin(x / 2) * 6 / π
-_pe_ke(x) = asin(x) * 2 / π
-_sp_pe(x) = sin(x * π / 6) * 2
-_sp_ke(x) = asin(sin(x * π / 6) * 2) * 2 / π
-_ke_pe(x) = sin(x * π / 2)
-_ke_sp(x) = asin(sin(x * π / 2) / 2) * 6 / π
 
 pairs = (
     (Pearson,  Spearman, _pe_sp),

@@ -1,9 +1,10 @@
-function iscorrelation(X::Matrix{<:AbstractFloat})
+# Check if a matrix is a valid correlation matrix
+function iscorrelation(X::Matrix{T}) where {T<:Real}
     all([
         isposdef(X),
         issymmetric(X),
-        all(diag(X) .== one(eltype(X))),
-        all(-one(eltype(X)) .≤ X .≤ one(eltype(X)))
+        all(diag(X) .== one(T)),
+        all(-one(T) .≤ X .≤ one(T))
     ])
 end
 
@@ -21,3 +22,12 @@ for T in (Int16, Int32, Int64, Real)
         @eval $F(x::$T) = $F(Float64(x))
     end
 end
+
+
+# convert correlation types: _from_to(x)
+_pe_sp(x) = asin(x / 2) * 6 / π
+_pe_ke(x) = asin(x) * 2 / π
+_sp_pe(x) = sin(x * π / 6) * 2
+_sp_ke(x) = asin(sin(x * π / 6) * 2) * 2 / π
+_ke_pe(x) = sin(x * π / 2)
+_ke_sp(x) = asin(sin(x * π / 2) / 2) * 6 / π

@@ -36,7 +36,7 @@ true
 """
 function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:AbstractFloat}
 
-    # Setup 
+    # Setup
     n = size(R, 1)
     iter_outer = 200
     iter_inner = 20
@@ -63,14 +63,14 @@ function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:Abstr
     λ   .= reverse(λ)         # [n,1]
     P   .= reverse(P, dims=2) # [n,n]
 
-    f₀, Fy = npd_gradient(y, λ, P, b₀, n) # [1], [n,1]
+    f₀, Fy = _npd_gradient(y, λ, P, b₀, n) # [1], [n,1]
     f      = f₀      # [1]
     b     .= b₀ - Fy # [n,1]
 
-    Ω₀ = npd_set_omega(λ, n) # [r,s]
+    Ω₀ = _npd_set_omega(λ, n) # [r,s]
     x₀ = copy(y)             # [n,1]
 
-    X       .= npd_pca(b₀, X, λ, P, n) # [n,n]
+    X       .= _npd_pca(b₀, X, λ, P, n) # [n,n]
     val_R    = 0.5 * norm(R)^2
     val_dual = val_R - f₀
     val_obj  = 0.5 * norm(X - R)^2
@@ -82,8 +82,8 @@ function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:Abstr
 
     k = 0
     while (gap > err_tol) && (norm_b_rel > err_tol) && (k < iter_outer)
-        c = npd_precond_matrix(Ω₀, P, n)                # [n,1]
-        d = npd_pre_cg(b, c, Ω₀, P, tol_cg, iter_cg, n) # [n,1]
+        c = _npd_precond_matrix(Ω₀, P, n)                # [n,1]
+        d = _npd_pre_cg(b, c, Ω₀, P, tol_cg, iter_cg, n) # [n,1]
 
         slope = sum((Fy - b₀) .* d)          # [1]
         y    .= x₀ + d                       # [n,1]
@@ -92,7 +92,7 @@ function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:Abstr
         λ, P = Vector{T}(λ), Matrix{T}(P)
         λ    .= reverse(λ)                   # [n,1]
         P    .= reverse(P, dims=2)           # [n,n]
-        f, Fy = npd_gradient(y, λ, P, b₀, n) # [1], [n,1]
+        f, Fy = _npd_gradient(y, λ, P, b₀, n) # [1], [n,1]
 
         k_inner = 0
         while (k_inner ≤ iter_inner) && (f > f₀ + tol_ls * slope * 0.5^k_inner + 1e-6)
@@ -103,13 +103,13 @@ function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:Abstr
             λ, P = Vector{T}(λ), Matrix{T}(P)
             λ    .= reverse(λ)                   # [n,1], [n,n]
             P    .= reverse(P, dims=2)           # [n,n]
-            f, Fy = npd_gradient(y, λ, P, b₀, n) # [1], [n,1]
+            f, Fy = _npd_gradient(y, λ, P, b₀, n) # [1], [n,1]
         end
 
         x₀  = copy(y) # [n,1]
         f₀  = f
 
-        X       .= npd_pca(b₀, X, λ, P, n) # [n,n]
+        X       .= _npd_pca(b₀, X, λ, P, n) # [n,n]
         val_dual = val_R - f₀
         val_obj  = 0.5 * norm(X - R)^2
         gap      = (val_obj - val_dual) / (1 + abs(val_dual) + abs(val_obj))
@@ -117,7 +117,7 @@ function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:Abstr
         norm_b   = norm(b)
         norm_b_rel      = norm_b / norm_b0
 
-        Ω₀ = npd_set_omega(λ, n) # [n,n] or [r,s]
+        Ω₀ = _npd_set_omega(λ, n) # [n,n] or [r,s]
 
         k += 1
     end
@@ -133,13 +133,13 @@ end
     f(y) = \\frac{1}{2} \\Vert (A + diag(y))_+ \\Vert_{F}^{2} - e^{T}y
     ```
 
-    and 
+    and
 
     ```math
     \\nabla f(y) = Diag((A + diag(y))_+) - e
     ```
 =#
-function npd_gradient(y::Vector{T}, λ₀::Vector{T}, P::Matrix{T}, b₀::Vector{T}, n::Int) where {T<:AbstractFloat}
+function _npd_gradient(y::Vector{T}, λ₀::Vector{T}, P::Matrix{T}, b₀::Vector{T}, n::Int) where {T<:AbstractFloat}
     r = sum(λ₀ .> 0)
     λ = copy(λ₀)
 
@@ -148,12 +148,12 @@ function npd_gradient(y::Vector{T}, λ₀::Vector{T}, P::Matrix{T}, b₀::Vector
     else
         λ[λ .< 0] .= zero(T)
         Fy = Vector{T}(vec(sum((P .* λ') .* P, dims=2)))
-        f  = T(T(0.5) * sum(λ.^2) - sum(b₀ .* y))
+        f  = T(sum(λ.^2) / 2 - sum(b₀ .* y))
         return (f, Fy)
     end
 end
 
-function npd_pca(b::Vector{T}, X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
+function _npd_pca(b::Vector{T}, X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
     r = sum(λ .> 0)
     s = n - r
 
@@ -181,18 +181,20 @@ function npd_pca(b::Vector{T}, X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int
     d .= sqrt.(b ./ d)
     d₂ = d * d'
     X .= X .* d₂
-    X
+
+    return X
 end
 
 # Preconditioned conjugate gradient method to solve Vₖdₖ = -∇f(yₖ)
-function npd_pre_cg(
-    b::Vector{T}, 
-    c::Vector{T}, 
-    Ω₀::Matrix{T}, 
-    P::Matrix{T}, 
-    ϵ::Real, 
-    N::Int, 
-    n::Int) where {T<:AbstractFloat}
+function _npd_pre_cg(
+    b::Vector{T},
+    c::Vector{T},
+    Ω₀::Matrix{T},
+    P::Matrix{T},
+    ϵ::Real,
+    N::Int,
+    n::Int
+) where {T<:AbstractFloat}
 
     ϵ_b = T(ϵ) * norm(b)
 
@@ -209,29 +211,29 @@ function npd_pre_cg(
             d .= z + d * (rz1 / rz2)
         end
 
-        w .= npd_jacobian(d, Ω₀, P, n)
+        w .= _npd_jacobian(d, Ω₀, P, n)
 
         denom = sum(d .* w)
         normr = norm(r)
-        
+
         denom ≤ 0 && return Vector{T}(d / norm(d))
-        
+
         α = rz1 / denom
         p .+= α*d
         r .-= α*w
-        
+
         norm(r) ≤ ϵ_b && return Vector{T}(p)
-        
+
         z .= r ./ c
         rz2, rz1 = copy(rz1), sum(r .* z)
     end
-    
-    Vector{T}(p)
+
+    return Vector{T}(p)
 end
 
-# Create the precondition matrix used in solving the linear system 
+# Create the precondition matrix used in solving the linear system
 # Vₖdₖ = -∇f(yₖ) in the conjugate gradient method.
-function npd_precond_matrix(Ω₀::Matrix{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
+function _npd_precond_matrix(Ω₀::Matrix{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
     r, s = size(Ω₀)
 
     r == 0 || r == n && return ones(T, n)
@@ -249,17 +251,18 @@ function npd_precond_matrix(Ω₀::Matrix{T}, P::Matrix{T}, n::Int) where {T<:Ab
     end
 
     c[c .< 1e-8] .= 1e-8
-    Vector{T}(vec(c))
+
+    return Vector{T}(vec(c))
 end
 
 # Used in creating the precondition matrix.
-function npd_set_omega(λ::Vector{T}, n::Int) where {T<:AbstractFloat}
+function _npd_set_omega(λ::Vector{T}, n::Int) where {T<:AbstractFloat}
     r = sum(λ .> 0)
     s = n - r
 
     r == 0 && return zeros(T, 0, 0)
     r == n && return ones(T, n, n)
-    
+
     M = zeros(T, r, s)
     λᵣ = @view λ[1:r]
     λₛ = @view λ[r+1:n]
@@ -267,11 +270,11 @@ function npd_set_omega(λ::Vector{T}, n::Int) where {T<:AbstractFloat}
         M[i,j] = λᵣ[i] / (λᵣ[i] - λₛ[j])
     end
 
-    Matrix{T}(M)
+    return Matrix{T}(M)
 end
 
 # Create the Generalized Jacobian matrix for the Newton direction step.
-function npd_jacobian(x::Vector{T}, Ω₀::Matrix{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
+function _npd_jacobian(x::Vector{T}, Ω₀::Matrix{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
 
     r, s = size(Ω₀)
     perturbation = 1e-10

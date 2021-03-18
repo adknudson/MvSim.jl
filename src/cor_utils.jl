@@ -113,13 +113,13 @@ true
 """
 function cor_convert end
 cor_convert(x::Real, from::Type{C},        to::Type{C}) where {C<:AbstractCorrelation} = x
-cor_convert(x::Real, from::Type{Pearson},  to::Type{Spearman}) = cor_constrain(asin(x / 2) * 6 / π)
-cor_convert(x::Real, from::Type{Pearson},  to::Type{Kendall})  = cor_constrain(asin(x) * 2 / π)
-cor_convert(x::Real, from::Type{Spearman}, to::Type{Pearson})  = cor_constrain(sin(x * π / 6) * 2)
-cor_convert(x::Real, from::Type{Spearman}, to::Type{Kendall})  = cor_constrain(asin(sin(x * π / 6) * 2) * 2 / π)
-cor_convert(x::Real, from::Type{Kendall},  to::Type{Pearson})  = cor_constrain(sin(x * π / 2))
-cor_convert(x::Real, from::Type{Kendall},  to::Type{Spearman}) = cor_constrain(asin(sin(x * π / 2) / 2) * 6 / π)
-function cor_convert(X::VecOrMat{<:Real}, from::Type{<:AbstractCorrelation}, to::Type{<:AbstractCorrelation})
+cor_convert(x::Real, from::Type{Pearson},  to::Type{Spearman}) = clampcor(_pe_sp(x))
+cor_convert(x::Real, from::Type{Pearson},  to::Type{Kendall})  = clampcor(_pe_ke(x))
+cor_convert(x::Real, from::Type{Spearman}, to::Type{Pearson})  = clampcor(_sp_pe(x))
+cor_convert(x::Real, from::Type{Spearman}, to::Type{Kendall})  = clampcor(_sp_ke(x))
+cor_convert(x::Real, from::Type{Kendall},  to::Type{Pearson})  = clampcor(_ke_pe(x))
+cor_convert(x::Real, from::Type{Kendall},  to::Type{Spearman}) = clampcor(_ke_sp(x))
+function cor_convert(X::Matrix{<:Real}, from::Type{<:AbstractCorrelation}, to::Type{<:AbstractCorrelation})
     cor_constrain(cor_convert.(copy(X), from, to))
 end
 
