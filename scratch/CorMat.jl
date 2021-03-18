@@ -1,17 +1,23 @@
 using LinearAlgebra
 using Bigsimr: iscorrelation, cor_nearPD
 
+
 abstract type AbstractCorrelation end
 struct Pearson  <: AbstractCorrelation end
 struct Spearman <: AbstractCorrelation end
 struct Kendall  <: AbstractCorrelation end
 
-struct CorMat{T<:Real, C<:Union{AbstractCorrelation, Nothing}} <: AbstractMatrix{T}
-    mat::AbstractMatrix
-    chol::Cholesky{T, <:AbstractMatrix}
-    cor_type::C
+
+const CorOrNothing = Union{AbstractCorrelation, Nothing}
+
+
+struct CorMat{C<:CorOrNothing} <: AbstractMatrix{Float64}
+    mat::AbstractMatrix{Float64}
+    chol::Cholesky{Float64, <:AbstractMatrix{Float64}}
+    cortype::C
 end
-function CorMat(m::AbstractMatrix, C::Union{AbstractCorrelation, Nothing})
+
+function CorMat(m::Matrix{Float64}, C::CorOrNothing)
     if !iscorrelation(m)
         m = cor_nearPD(m)
     end
@@ -20,9 +26,41 @@ function CorMat(m::AbstractMatrix, C::Union{AbstractCorrelation, Nothing})
 
     return CorMat(m, chol, C)
 end
-CorMat(m::AbstractMatrix) = CorMat(m, nothing)
+CorMat(m::Matrix{Float64}) = CorMat(m, nothing)
+CorMat{Nothing}(m::Matrix{Float64}) = CorMat(m, nothing)
+function CorMat{C}(m::Matrix{Float64}) where {C<:AbstractCorrelation}
+    return CorMat(m, C())
+end
 
-cor_type(m::CorMat) = m.cor_type
+cortype(::CorMat{C}) where {C<:CorOrNothing} = C
+cortype(::Type{CorMat{C}}) where {C<:CorOrNothing} = C
+
+function X_A_Xt(a::CorMat, x::Matrix{Float64})
+    z = x * a.chol.L
+    return z * transpose(z)
+end
+function Xt_A_X(a::CorMat, x::Matrix{Float64})
+    z = transpose(x) * a.chol.L
+    return z * transpose(z)
+end
+function X_invA_Xt(a::CorMat, x::Matrix{Float64})
+    z = a.chol \ transpose(x)
+    return x * z
+end
+function Xt_invA_X(a::CorMat, x::Matrix{Float64})
+    z = a.chol \ x
+    return transpose(x) * z
+end
+
+function whiten!(r::VecOrMat{Float64}, m::CorMat, x::VecOrMat{Float64})
+    copyto!(r, x)
+    return rdiv!(r, m.chol.U)
+end
+whiten!(m::CorMat, x::VecOrMat{Float64}) = whiten!(x, m, x)
+whiten(m::CorMat, x::VecOrMat{Float64}) = whiten!(similar(x), m, x)
+unwhiten!(r::VecOrMat{Float64}, m::CorMat, x::VecOrMat{Float64}) = mul!(r, x, m.chol.U)
+unwhiten!(m::CorMat, x::VecOrMat{Float64}) = unwhiten!(x, m, x)
+unwhiten(m::CorMat, x::VecOrMat{Float64}) = unwhiten!(similar(x), m, x)
 
 Base.size(m::CorMat) = size(m.mat)
 Base.getindex(m::CorMat, i::Int) = getindex(m.mat, i)
@@ -30,6 +68,7 @@ Base.getindex(m::CorMat, I::Vararg{Int, N}) where {N} = getindex(m.mat, I...)
 Base.setindex!(m::CorMat, v, i::Int) = setindex!(m.mat, v, i)
 Base.setindex!(m::CorMat, v, I::Vararg{Int, N}) where {N} = setindex!(m.mat, v, I...)
 
+# from -> to
 _pe_sp(x) = asin(x / 2) * 6 / π
 _pe_ke(x) = asin(x) * 2 / π
 _sp_pe(x) = sin(x * π / 6) * 2
@@ -46,13 +85,28 @@ pairs = (
     (Kendall,  Spearman, _ke_sp)
 )
 for s in pairs
-    # from, to, fun
+    # from, to, formula
     C, D, fun = s
-    ts = (Float64, Float32)
-    for T in ts, S in ts
-        @eval function Base.convert(::Type{CorMat{$T, $D}}, m::CorMat{$S, $C})
-            return CorMat($T.($fun.(m.mat)), $D())
-        end
+    @eval function Base.convert(::Type{CorMat{$D}}, m::CorMat{$C})
+        return CorMat($fun.(m.mat), $D())
     end
 end
-Base.convert(::Type{CorMat{T,C}}, m::CorMat{T,C}) where {T,C} = m
+Base.convert(::Type{CorMat{C}}, m::CorMat{C}) where {C<:AbstractCorrelation} = m
+function Base.convert(::Type{CorMat{Nothing}}, m::CorMat{<:CorOrNothing})
+    return CorMat(m.mat, m.chol, nothing)
+end
+function Base.convert(::Type{CorMat{C}}, m::CorMat{Nothing}) where {C<:AbstractCorrelation}
+    return CorMat(m.mat, m.chol, C())
+end
+CorMat{C}(m::CorMat) where {C<:CorOrNothing} = convert(CorMat{C}, m)
+
+Base.Matrix(m::CorMat) = Matrix(m.mat)
+Base.:*(m::CorMat, c::T) where {T<:Real} = m.mat * c
+Base.:*(m::CorMat, x::VecOrMat{Float64}) = m.mat * x
+Base.:\(m::CorMat, x::VecOrMat{Float64}) = m.chol \ x
+
+LinearAlgebra.diag(m::CorMat) = ones(eltype(m), size(m,1))
+LinearAlgebra.cholesky(m::CorMat) = m.chol
+LinearAlgebra.inv(m::CorMat) = inv(m.chol)
+LinearAlgebra.det(m::CorMat) = det(m.chol)
+LinearAlgebra.logdet(m::CorMat) = logdet(m.chol)
