@@ -1,11 +1,3 @@
-using Bigsimr: cor_randPD
-using Distributions
-using Distributions: UnivariateDistribution
-
-include("CorMat.jl")
-
-const UD = UnivariateDistribution
-
 struct MvDist{C<:CorMat}
     margins::Vector{UD}
     target_cor::C

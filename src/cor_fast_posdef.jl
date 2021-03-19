@@ -1,4 +1,4 @@
-function fast_pca!(X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int) where T<:AbstractFloat
+function _fpd_pca!(X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int) where {T<:AbstractFloat}
     r = sum(λ .> 0)
     s = n - r
 
@@ -6,8 +6,8 @@ function fast_pca!(X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int) where T<:A
         X .= zeros(T, n, n)
     elseif r == n
         return nothing
-    elseif r == 1 
-        X .= (λ[1] * λ[1]) * (P[:,1] * P[:,1]')   
+    elseif r == 1
+        X .= (λ[1] * λ[1]) * (P[:,1] * P[:,1]')
     elseif r ≤ s
         P₁   = @view P[:, 1:r]
         λ₁   = sqrt.(λ[1:r])
@@ -19,17 +19,17 @@ function fast_pca!(X::Matrix{T}, λ::Vector{T}, P::Matrix{T}, n::Int) where T<:A
         P₂λ₂ = P₂ .* λ₂'
         X   .= X .+ P₂λ₂ * P₂λ₂'
     end
-    nothing
+    return X
 end
 
 
 """
-    cor_fastPD!(R::Matrix{<:AbstractFloat}[, τ=1e-6])
+cor_fast_posdef!(R::Matrix{<:AbstractFloat}[, τ=1e-6])
 
-Same as [`cor_fastPD`](@ref), but saves space by overwriting the input `R`
+Same as [`cor_fast_posdef`](@ref), but saves space by overwriting the input `R`
 instead of creating a copy.
 
-See also: [`cor_fastPD`](@ref), [`cor_nearPD`](@ref)
+See also: [`cor_fast_posdef`](@ref), [`cor_near_posdef`](@ref)
 
 # Examples
 ```jldoctest
@@ -45,39 +45,39 @@ julia> r = [1.00 0.82 0.56 0.44; 0.82 1.00 0.28 0.85; 0.56 0.28 1.00 0.22; 0.44 
 julia> isposdef(r)
 false
 
-julia> cor_fastPD!(r)
+julia> cor_fast_posdef!(r)
 
 julia> isposdef(r)
 true
 ```
 """
-function cor_fastPD!(R::Matrix{<:AbstractFloat}, τ=1e-6)
+function cor_fast_posdef!(R::Matrix{T}, τ=1e-6) where {T<:AbstractFloat}
     n  = size(R, 1)
-    τ  = max(eps(eltype(R)), τ)
-    
+    τ  = max(eps(T), τ)
+
     R .= Symmetric(R, :U)
-    R[diagind(R)] .= (one(eltype(R)) - τ)
+    R[diagind(R)] .= (one(T) - τ)
 
     λ, P = eigen(R)
     λ   .= reverse(λ)
     P   .= reverse(P, dims=2)
 
-    fast_pca!(R, λ, P, n)
+    _fpd_pca!(R, λ, P, n)
 
     R[diagind(R)] .+= τ
     R .= cov2cor(R)
-    nothing
+    return R
 end
 
 
 """
-    cor_fastPD(R::Matrix{<:AbstractFloat}[, τ=1e-6])
+    cor_fast_posdef(R::Matrix{<:AbstractFloat}[, τ=1e-6])
 
 Return a positive definite correlation matrix that is close to `R`. `τ` is a
 tuning parameter that controls the minimum eigenvalue of the resulting matrix.
 `τ` can be set to zero if only a positive semidefinite matrix is needed.
 
-See also: [`cor_fastPD!`](@ref), [`cor_nearPD`](@ref)
+See also: [`cor_fast_posdef!`](@ref), [`cor_near_posdef`](@ref)
 
 # Examples
 ```jldoctest
@@ -93,7 +93,7 @@ julia> r = [1.00 0.82 0.56 0.44; 0.82 1.00 0.28 0.85; 0.56 0.28 1.00 0.22; 0.44 
 julia> isposdef(r)
 false
 
-julia> p = cor_fastPD(r)
+julia> p = cor_fast_posdef(r)
 4×4 Array{Float64,2}:
  1.0       0.817095  0.559306  0.440514
  0.817095  1.0       0.280196  0.847352
@@ -104,13 +104,9 @@ julia> isposdef(p)
 true
 ```
 """
-function cor_fastPD(R::Matrix{<:AbstractFloat}, τ=1e-6)
-    X = copy(R)
-    cor_fastPD!(X, τ)
-    X
-end
-function cor_fastPD(R::Matrix{Float16}, τ=1e-6)
+cor_fast_posdef(R::Matrix{<:AbstractFloat}, τ=1e-6) = cor_fast_posdef!(copy(R), τ)
+function cor_fast_posdef(R::Matrix{Float16}, τ=1e-6)
     X = Matrix{Float32}(R)
-    cor_fastPD!(X, τ)
-    Matrix{Float16}(X)
+    cor_fast_posdef!(X, τ)
+    return Matrix{Float16}(X)
 end

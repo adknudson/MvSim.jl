@@ -32,17 +32,11 @@ abstract type AbstractCorrelation end
 struct Pearson  <: AbstractCorrelation end
 struct Spearman <: AbstractCorrelation end
 struct Kendall  <: AbstractCorrelation end
+struct Adjusted <: AbstractCorrelation end
 
 
-export rvec, rmvn
-export pearson_match, pearson_bounds
-export AbstractCorrelation, Pearson, Spearman, Kendall
-export cor, cor_fast
-export cor_nearPD, cor_fastPD, cor_fastPD!
-export cor_randPD, cor_randPSD
-export cor_convert, cor_bounds, cor_constrain, cor_constrain!
-export cov2cor, cov2cor!, clamp, cor_clamp
-export iscorrelation
+export CorMat, MvDist
+
 
 
 const UD  = UnivariateDistribution
@@ -58,22 +52,9 @@ const invsqrtpi = inv(sqrt(π))
 const invsqrt2π = inv(sqrt(2π))
 
 
-include("utils.jl")
-
-include("rvec.jl")
-
-include("cor_bounds.jl")
-include("fast_pos_def.jl")
-include("nearest_pos_def.jl")
-include("cor_random.jl")
-include("cor_utils.jl")
-
-include("PearsonMatching/pearson_match.jl")
-include("PearsonMatching/pearson_bounds.jl")
-include("PearsonMatching/utils.jl")
-
-include("GSDist.jl")
+include("CorMat.jl")
 include("MvDist.jl")
+include("GSDist.jl")
 
 include("precompile.jl")
 

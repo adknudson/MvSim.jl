@@ -1,13 +1,12 @@
 """
-    cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:AbstractFloat}
+    cor_near_posdef(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:AbstractFloat}
 
-Return the nearest positive definite correlation matrix to `R`. `τ` is a
-tuning parameter that controls the minimum eigenvalue of the resulting matrix.
-`τ` can be set to zero if only a positive semidefinite matrix is needed. `tol`
-is the accuracy in the relative gap. Set to a smaller value (e.g. `1e-8`) if
-higher accuracy is needed.
+Return the nearest positive definite correlation matrix to `R`. `τ` is a tuning parameter
+that controls the minimum eigenvalue of the resulting matrix. `τ` can be set to zero if only
+a positive semidefinite matrix is needed. `tol` is the accuracy in the relative gap. Set to
+a smaller value (e.g. `1e-8`) if higher accuracy is needed.
 
-See also: [`cor_fastPD`](@ref), [`cor_fastPD!`](@ref)
+See also: [`cor_fast_posdef`](@ref), [`cor_fast_posdef!`](@ref)
 
 # Examples
 ```jldoctest
@@ -23,7 +22,7 @@ julia> r = [1.00 0.82 0.56 0.44; 0.82 1.00 0.28 0.85; 0.56 0.28 1.00 0.22; 0.44 
 julia> isposdef(r)
 false
 
-julia> p = cor_nearPD(r)
+julia> p = cor_near_posdef(r)
 4×4 Array{Float64,2}:
  1.0       0.817095  0.559306  0.440514
  0.817095  1.0       0.280196  0.847352
@@ -34,7 +33,7 @@ julia> isposdef(p)
 true
 ```
 """
-function cor_nearPD(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:AbstractFloat}
+function cor_near_posdef(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:AbstractFloat}
 
     # Setup
     n = size(R, 1)
