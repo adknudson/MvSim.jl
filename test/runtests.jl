@@ -1,11 +1,19 @@
 using Test
+using Bigsimr
 
 const tests = [
-    "Correlation",
-    "PearsonMatching",
-    "GeneralizedSDistribution",
-    "RandomVector",
-    "Utilities"
+    "common",
+    "cor_adjust",
+    "cor_bounds",
+    "cor_convert",
+    "cor_fast_posdef",
+    "cor_near_posdef",
+    "cor_rand",
+    "cor",
+    "CorMat",
+    "MvDist",
+    "GSDist",
+    "randvec"
 ]
 
 printstyled("Running tests:\n", color=:blue)

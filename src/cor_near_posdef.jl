@@ -45,7 +45,7 @@ function cor_near_posdef(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:
     err_tol    = max(eps(T), tol)
 
     # Make R symmetric
-    R .= Symmetric(R, :U) # [n,n]
+    _symmetrize(R) # [n,n]
     R[diagind(R)] .= one(T)
 
     b = ones(T, n)
@@ -122,7 +122,7 @@ function cor_near_posdef(R::Matrix{T}, τ::Real=1e-6; tol::Real=1e-3) where {T<:
     end
 
     X[diagind(X)] .+= τ
-    return cov2cor(X)
+    return _cov2cor(X)
 end
 
 #=

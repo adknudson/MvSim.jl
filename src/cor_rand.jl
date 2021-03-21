@@ -1,5 +1,5 @@
 """
-    cor_rand([T::Type{<:AbstractFloat}], d::Int[, k::Int=d-1])
+    cor_rand([T::Type{<:AbstractFloat}], d::Int[, k::Int=d-1]; ensure_posdef::Bool=false)
 
 Return a random positive semidefinite correlation matrix where `d` is the
 dimension (``d ≥ 2``) and `k` is the number of factor loadings (``1 ≤ k < d``).
@@ -28,21 +28,21 @@ julia> cor_rand(4)
   0.289011   0.190938  -0.102597   1.0
 ```
 """
-function cor_rand(T::Type{<:AbstractFloat}, d::Int, k::Int=dim-1; ensure_posdef::Bool=false)
+function cor_rand(T::Type{<:AbstractFloat}, d::Int, k::Int=d-1; ensure_posdef::Bool=false)
     @assert d ≥ 2
     @assert 1 ≤ k < d
 
     d == 1 && return ones(T, 1, 1)
 
-    W  = randn(T, d, k)
+    W  = _randn(T, d, k)
     S  = W * W' + diagm(rand(T, d))
     S2 = diagm(1 ./ sqrt.(diag(S)))
     R = S2 * S * S2
 
-    cor_constrain!(R)
+    _cor_constrain!(R)
 
     if ensure_posdef
-        cor_fastPD!(R)
+        cor_fast_posdef!(R)
     end
 
     return R

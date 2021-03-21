@@ -4,19 +4,15 @@ struct MvDist{C<:CorMat}
     adjust_cor::CorMat
 end
 MvDist(margins::Vector{UD}, rho::CorMat{Nothing}) = MvDist(margins, rho, rho)
-function MvDist(margins::Vector{UD}, rho::CorMat{Pearson})
-    # rho_adjust = match_pearson
-    # MvDist(margins, rho, CorMat{Nothing}(rho_adjust))
+MvDist(margins::Vector{UD}, rho::CorMat{Adjusted}) = MvDist(margins, rho, rho)
+function MvDist(margins::Vector{UD}, rho::CorMat{<:PeSpKe})
+    rho_adjust = cor_adjust(rho)
+    return MvDist(margins, rho, rho_adjust)
 end
-function MvDist(margins::Vector{UD}, rho::CorMat{C}) where {C<:Union{Spearman, Kendall}}
-    rho_adjust = convert(CorMat{Pearson}, rho)
-    MvDist(margins, rho, CorMat{Nothing}(rho_adjust))
-end
-function MvDist(margins::Vector{UD}, rho::Matrix{Float64}, C::AbstractCorrelation)
-    rho_adjust = CorMat{Nothing}(cor_adjust(rho, C))
+function MvDist(margins::Vector{UD}, rho::Matrix{<:Real}, C::PeSpKe)
+    rho_adjust = cor_adjust(CorMat(rho, C))
     MvDist(margins, CorMat{C}, rho_adjust)
 end
-
 
 
 function Base.show(io::IO, ::MIME"text/plain", D::MvDist)

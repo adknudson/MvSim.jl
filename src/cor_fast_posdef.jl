@@ -55,7 +55,7 @@ function cor_fast_posdef!(R::Matrix{T}, τ=1e-6) where {T<:AbstractFloat}
     n  = size(R, 1)
     τ  = max(eps(T), τ)
 
-    R .= Symmetric(R, :U)
+    _symmetrize!(R)
     R[diagind(R)] .= (one(T) - τ)
 
     λ, P = eigen(R)
@@ -65,7 +65,7 @@ function cor_fast_posdef!(R::Matrix{T}, τ=1e-6) where {T<:AbstractFloat}
     _fpd_pca!(R, λ, P, n)
 
     R[diagind(R)] .+= τ
-    R .= cov2cor(R)
+    _cov2cor!(R)
     return R
 end
 
