@@ -16,7 +16,7 @@ julia> R = fill(0.5, 3, 3); r[diagind(r)] .= 1.0;
 """
 function rvec end
 for T in (Float64, Float32, Float16)
-    @eval function rvec(n::Int, R::Matrix{$T}, margins::Vector{UD})
+    @eval function rvec(n::Int, R::Matrix{$T}, margins::Vector{<:UD})
         d = length(margins)
         r,s = size(R)
 
@@ -29,5 +29,5 @@ for T in (Float64, Float32, Float16)
         end
         sdata(Z)
     end
-    @eval rvec(n::Real, R::Matrix{$T}, margins::Vector{UD}) = rvec(Int(n), R, margins)
+    @eval rvec(n::Real, R::Matrix{$T}, margins::Vector{<:UD}) = rvec(Int(n), R, margins)
 end

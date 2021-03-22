@@ -135,4 +135,19 @@ end
 """
     cor_adjust(m::CorMat{Pearson}, margins::Vector{UnivariateDistribution}; kwargs...)
 """
-function cor_adjust(m::CorMat{Pearson}, margins::Vector{UD}; kwargs...) end
+function cor_adjust(m::CorMat{Pearson}, margins::Vector{<:UD}; kwargs...)
+    !(length(margins) == size(m, 1) == size(m, 2)) && throw(
+        DimensionMismatch("The number of margins must be the same size as the correlation matrix.")
+    )
+
+    d = length(margins)
+    R = SharedMatrix{Float64}(d, d)
+
+    # Calculate the pearson matching pairs
+    @threads for i in collect(subsets(1:d, Val{2}()))
+        @inbounds R[i...] = _pearson_match(m[i...], margins[i[1]], margins[i[2]]; kwargs...)
+    end
+    R = Matrix{Float64}(Symmetric(sdata(R)))
+
+    return CorMat{Adjusted}(R)
+end

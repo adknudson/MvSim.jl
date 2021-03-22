@@ -89,7 +89,7 @@ function cor_bounds(dA::UD, dB::UD, C::Pearson; kwargs...)
     return _sim_bounds(dA, dB, C, n_samples)
 end
 
-function cor_bounds(margins::Vector{UD}, C::PeSpKe=Pearson(); kwargs...)
+function cor_bounds(margins::Vector{<:UD}, C::PeSpKe=Pearson(); kwargs...)
     d = length(margins)
     lower, upper = zeros(Float64, d, d), zeros(Float64, d, d)
 

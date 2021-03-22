@@ -5,7 +5,7 @@ struct CorMat{C<:CorOrNothing} <: AbstractMatrix{Float64}
 end
 function CorMat(m::Matrix{Float64}, C::CorOrNothing)
     if !iscorrelation(m)
-        m = cor_near_posdef(m)
+        m = cor_near_posdef(_cor_constrain(m))
     end
 
     chol = cholesky(m)
@@ -65,13 +65,17 @@ Base.convert(::Type{CorMat{Pearson }}, m::CorMat{Spearman}) = CorMat(_sp_pe.(m.m
 Base.convert(::Type{CorMat{Kendall }}, m::CorMat{Spearman}) = CorMat(_pe_ke.(m.mat), Kendall())
 Base.convert(::Type{CorMat{Pearson }}, m::CorMat{Kendall }) = CorMat(_ke_pe.(m.mat), Pearson())
 Base.convert(::Type{CorMat{Spearman}}, m::CorMat{Kendall }) = CorMat(_ke_sp.(m.mat), Spearman())
+# Converting to the same returns the same
 Base.convert(::Type{CorMat{C}}, m::CorMat{C}) where {C<:AbstractCorrelation} = m
-# Nothing Type (just change cortype to nothing)
+# Nothing Type (just change cortype to nothing or to the target)
 Base.convert(::Type{CorMat{Nothing}}, m::CorMat{<:CorOrNothing}) = CorMat(m.mat, m.chol, nothing)
 Base.convert(::Type{CorMat{C}}, m::CorMat{Nothing}) where {C<:AbstractCorrelation} = CorMat(m.mat, m.chol, C())
 # Adjusted Type (cannot convert Pearson to adjusted without margins)
 Base.convert(::Type{CorMat{Adjusted}}, m::CorMat{Spearman}) = CorMat(_sp_pe.(m.mat), Adjusted())
 Base.convert(::Type{CorMat{Adjusted}}, m::CorMat{Kendall }) = CorMat(_ke_pe.(m.mat), Adjusted())
+# Converting a plain matrix is basically just a constructor
+Base.convert(::Type{CorMat{C}}, m::AbstractMatrix{Float64}) where {C<:CorOrNothing} = CorMat(m, C())
+
 # Alternative form
 CorMat{C}(m::CorMat) where {C<:CorOrNothing} = convert(CorMat{C}, m)
 
@@ -90,3 +94,8 @@ LinearAlgebra.logdet(m::CorMat) = logdet(m.chol)
 
 
 iscorrelation(C::CorMat) = iscorrelation(C.mat)
+
+
+_rmvn(n::Int, m::CorMat{Pearson}) = unwhiten(m, _randn(n, size(m,1)))
+_rmvn(n::Int, m::CorMat{Adjusted}) = unwhiten(m, _randn(n, size(m,1)))
+_rmvn(n::Int, m::CorMat{Nothing}) = unwhiten(m, _randn(n, size(m,1)))

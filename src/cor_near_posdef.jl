@@ -195,7 +195,7 @@ function _npd_pre_cg(
     n::Int
 ) where {T<:AbstractFloat}
 
-    ϵ_b = T(ϵ) * norm(b)
+    ϵ_b = norm(b) * ϵ
 
     r   = copy(b)
     z   = r ./ c

@@ -32,7 +32,8 @@ struct Adjusted <: AbstractCorrelation end
 
 
 export AbstractCorrelation, Pearson, Spearman, Kendall, Adjusted
-export CorMat, MvDist
+export CorMat, cortype
+export MvDist
 export cor, cor_threaded
 export iscorrelation
 export cor_rand

@@ -1,15 +1,15 @@
 struct MvDist{C<:CorMat}
-    margins::Vector{UD}
+    margins::Vector{<:UD}
     target_cor::C
     adjust_cor::CorMat
 end
-MvDist(margins::Vector{UD}, rho::CorMat{Nothing}) = MvDist(margins, rho, rho)
-MvDist(margins::Vector{UD}, rho::CorMat{Adjusted}) = MvDist(margins, rho, rho)
-function MvDist(margins::Vector{UD}, rho::CorMat{<:PeSpKe})
+MvDist(margins::Vector{<:UD}, rho::CorMat{Nothing}) = MvDist(margins, rho, rho)
+MvDist(margins::Vector{<:UD}, rho::CorMat{Adjusted}) = MvDist(margins, rho, rho)
+function MvDist(margins::Vector{<:UD}, rho::CorMat{<:PeSpKe})
     rho_adjust = cor_adjust(rho)
     return MvDist(margins, rho, rho_adjust)
 end
-function MvDist(margins::Vector{UD}, rho::Matrix{<:Real}, C::PeSpKe)
+function MvDist(margins::Vector{<:UD}, rho::Matrix{<:Real}, C::PeSpKe)
     rho_adjust = cor_adjust(CorMat(rho, C))
     MvDist(margins, CorMat{C}, rho_adjust)
 end

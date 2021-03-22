@@ -192,7 +192,7 @@ for T in (Float64, Float32, Float16)
         @inbounds @threads for i in eachindex(Z)
             Z[i] = randn($T)
         end
-        sdata(Z)
+        return sdata(Z)
     end
     @eval _randn(::Type{$T}, n::Real, d::Real) = _randn($T, Int(n), Int(d))
 end
@@ -201,10 +201,10 @@ _randn(n::Real, d::Real) = _randn(Float64, Int(n), Int(d))
 
 # internal random multivariate normal
 for T in (Float64, Float32, Float16)
-    @eval function _rmvn(n::Int, ρ::Matrix{$T})
-        Z = _randn($T, n, size(ρ, 1))
-        C = cholesky(ρ)
-        Z * Matrix{$T}(C.U)
+    @eval function _rmvn(n::Int, R::Matrix{$T})
+        Z = _randn($T, n, size(R, 1))
+        C = cholesky(R)
+        return Z * Matrix{$T}(C.U)
     end
 end
-_rmvn(n::Int, ρ::Float64) = _rmvn(n, [1.0 ρ; ρ 1.0])
+_rmvn(n::Int, r::Float64) = _rmvn(n, [1.0 r; r 1.0])
